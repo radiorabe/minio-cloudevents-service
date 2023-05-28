@@ -1,0 +1,185 @@
+import json
+import logging
+import signal
+import sys
+
+from cloudevents.http import CloudEvent
+from cloudevents.kafka import to_structured
+from configargparse import ArgumentParser
+from kafka import KafkaConsumer, KafkaProducer
+from kafka.consumer.fetcher import ConsumerRecord
+
+logger = logging.getLogger(__name__)
+
+
+def from_consumer_record(msg: ConsumerRecord) -> [CloudEvent]:
+    """
+    naive implementation of https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md
+    """
+    for rec in json.loads(msg.value).get("Records", []):
+        yield CloudEvent(
+            {
+                "id": ".".join(
+                    [
+                        rec.get("responseElements", {}).get("x-amz-request-id"),
+                        rec.get("responseElements", {}).get("x-amz-id-2"),
+                    ]
+                ),
+                "source": ".".join(
+                    [
+                        rec.get("eventSource"),
+                        rec.get("awsRegion"),
+                        rec.get("s3", {}).get("bucket", {}).get("name"),
+                    ]
+                ),
+                "specversion": "1.0",
+                "type": ".".join(
+                    [
+                        "com.amazonaws.s3",
+                        rec.get("eventName"),
+                    ]
+                ),
+                "datacontenttype": "application/json",
+                "subject": rec.get("s3", {}).get("object", {}).get("key"),
+                "time": rec.get("eventTime"),
+            },
+            rec,
+        )
+
+
+def app(
+    bootstrap_servers: list[str],
+    security_protocol: str,
+    tls_cafile: str,
+    tls_certfile: str,
+    tls_keyfile: str,
+    consumer_topic: str,
+    consumer_group: str,
+    consumer_auto_offset_reset: str,
+    producer_topic: str,
+):
+    consumer = KafkaConsumer(
+        consumer_topic,
+        bootstrap_servers=bootstrap_servers,
+        security_protocol=security_protocol,
+        group_id=consumer_group,
+        auto_offset_reset=consumer_auto_offset_reset,
+        ssl_cafile=tls_cafile,
+        ssl_certfile=tls_certfile,
+        ssl_keyfile=tls_keyfile,
+    )
+    producer = KafkaProducer(
+        bootstrap_servers=bootstrap_servers,
+        security_protocol=security_protocol,
+        retries=5,
+        max_in_flight_requests_per_connection=1,
+        key_serializer=lambda k: bytes(k, "utf-8"),
+        ssl_cafile=tls_cafile,
+        ssl_certfile=tls_certfile,
+        ssl_keyfile=tls_keyfile,
+    )
+
+    def on_sigint(*_):  # pragma: no cover
+        consumer.close()
+        producer.flush()
+        producer.close()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, on_sigint)
+
+    def on_send_error(ex):  # pragma: no cover
+        logger.error("Failed to send CloudEvent", exc_info=ex)
+
+    for msg in consumer:
+        for ce in from_consumer_record(msg):
+            km = to_structured(
+                ce,
+                key_mapper=lambda event: ".".join(
+                    [
+                        ce.get("type"),
+                        ce.get("source"),
+                        ce.get("subject"),
+                    ]
+                ),
+            )
+            producer.send(
+                producer_topic,
+                key=km.key,
+                value=km.value,
+                headers=km.headers if km.headers else None,
+            ).add_errback(on_send_error)
+        producer.flush()
+
+
+def main():  # pragma: no cover
+    parser = ArgumentParser(__name__)
+    parser.add(
+        "--kafka-bootstrap-servers",
+        required=True,
+        env_var="KAFKA_BOOTSTRAP_SERVERS",
+    )
+    parser.add(
+        "--kafka-security-protocol",
+        default="PLAINTEXT",
+        env_var="KAFKA_SECURITY_PROTOCOL",
+    )
+    parser.add(
+        "--kafka-tls-cafile",
+        default=None,
+        env_var="KAFKA_TLS_CAFILE",
+    )
+    parser.add(
+        "--kafka-tls-certfile",
+        default=None,
+        env_var="KAFKA_TLS_CERTFILE",
+    )
+    parser.add(
+        "--kafka-tls-keyfile",
+        default=None,
+        env_var="KAFKA_TLS_KEYFILE",
+    )
+    parser.add(
+        "--kafka-consumer-topic",
+        default="minioevents",
+        env_var="KAFKA_CONSUMER_TOPIC",
+    )
+    parser.add(
+        "--kafka-consumer-group",
+        default=__name__,
+        env_var="KAFKA_CONSUMER_GROUP",
+    )
+    parser.add(
+        "--kafka-consumer-auto-offset-reset",
+        default="latest",
+        env_var="KAFKA_CONSUMER_AUTO_OFFSET_RESET",
+    )
+    parser.add(
+        "--kafka-producer-topic",
+        default="cloudevents",
+        env_var="KAFKA_PRODUCER_TOPIC",
+    )
+    parser.add(
+        "--quiet", "-q", default=False, action="store_true", env_var="MINIOEVENTS_QUIET"
+    )
+
+    args = parser.parse_args()
+
+    if not args.quiet:
+        logging.basicConfig(level=logging.INFO)
+    logger.info(f"Starting {__name__}...")
+
+    app(
+        bootstrap_servers=args.kafka_bootstrap_servers,
+        security_protocol=args.kafka_security_protocol,
+        tls_cafile=args.kafka_tls_cafile,
+        tls_certfile=args.kafka_tls_certfile,
+        tls_keyfile=args.kafka_tls_keyfile,
+        consumer_topic=args.kafka_consumer_topic,
+        consumer_group=args.kafka_consumer_group,
+        consumer_auto_offset_reset=args.kafka_consumer_auto_offset_reset,
+        producer_topic=args.kafka_producer_topic,
+    )
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
