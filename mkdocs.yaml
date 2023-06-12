@@ -43,7 +43,7 @@ plugins:
 - mkdocstrings:
     handlers:
       python:
-        paths: [acringest]
+        paths: [minioevents]
 
 nav:
   - README: index.md
@@ -51,4 +51,4 @@ nav:
 
 watch:
   - README.md
-  - acringest.py
+  - minioevents.py
