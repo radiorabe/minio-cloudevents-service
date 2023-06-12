@@ -1,0 +1,24 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: minio-cloudevents-service
+  title: MinIo CloudEvents Service
+  description: |
+    Consumes MinIO events from a Kafka topic in S3/MinIO format and converts
+    them to CloudEvents and sends them to a `cloudevents` topic in Kafka.
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: radiorabe/minio-cloudevents-service
+  links:
+    - url: https://cloudevents.io/
+      title: CloudEvents
+spec:
+  type: service
+  lifecycle: experimental
+  owner: it-reaktion
+  dependsOn:
+    - component:default/python-minimal
+    - component:default/s2i-python-minimal
+    - component:default/minio
+    - component:default/kafka

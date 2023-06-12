@@ -11,7 +11,7 @@ Run the container to see all available configuration options and their
 corresponding environment variables.
 
 ```bash
-podman run --rm minioevents:dev minioevents --help
+podman run --rm ghcr.io/radiorabe/minioevents:latest --help
 ```
 
 ## Development

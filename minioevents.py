@@ -159,25 +159,29 @@ def main():  # pragma: no cover
         env_var="KAFKA_PRODUCER_TOPIC",
     )
     parser.add(
-        "--quiet", "-q", default=False, action="store_true", env_var="MINIOEVENTS_QUIET"
+        "--quiet",
+        "-q",
+        default=False,
+        action="store_true",
+        env_var="MINIOEVENTS_QUIET",
     )
 
-    args = parser.parse_args()
+    options = parser.parse_args()
 
-    if not args.quiet:
+    if not options.quiet:
         logging.basicConfig(level=logging.INFO)
     logger.info(f"Starting {__name__}...")
 
     app(
-        bootstrap_servers=args.kafka_bootstrap_servers,
-        security_protocol=args.kafka_security_protocol,
-        tls_cafile=args.kafka_tls_cafile,
-        tls_certfile=args.kafka_tls_certfile,
-        tls_keyfile=args.kafka_tls_keyfile,
-        consumer_topic=args.kafka_consumer_topic,
-        consumer_group=args.kafka_consumer_group,
-        consumer_auto_offset_reset=args.kafka_consumer_auto_offset_reset,
-        producer_topic=args.kafka_producer_topic,
+        bootstrap_servers=options.kafka_bootstrap_servers,
+        security_protocol=options.kafka_security_protocol,
+        tls_cafile=options.kafka_tls_cafile,
+        tls_certfile=options.kafka_tls_certfile,
+        tls_keyfile=options.kafka_tls_keyfile,
+        consumer_topic=options.kafka_consumer_topic,
+        consumer_group=options.kafka_consumer_group,
+        consumer_auto_offset_reset=options.kafka_consumer_auto_offset_reset,
+        producer_topic=options.kafka_producer_topic,
     )
 
 

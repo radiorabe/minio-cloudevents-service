@@ -10,10 +10,12 @@ on:
 
 jobs:
   release-container:
-    uses: radiorabe/actions/.github/workflows/release-container.yaml@v0.11.1
+    uses: radiorabe/actions/.github/workflows/release-container.yaml@v0.13.1
     with:
       image: ghcr.io/radiorabe/minioevents
       name: minioevents
       display-name: Convert MinIO-Events into CloudEvents
       tags: minimal rhel9 ubi9 rabe minio kafka cloudevents
       cosign-base-image-only: false
+  mkdocs:
+    uses: radiorabe/actions/.github/workflows/release-mkdocs.yaml@v0.13.1
