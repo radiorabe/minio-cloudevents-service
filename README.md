@@ -1,9 +1,14 @@
 # MinIO CloudEvents Service
 
 **MinIO CloudEvents Service** consumes MinIO events from a Kafka topic in
-S3/MinIO format and then converts them to CloudEvents and sends them to a
+S3/MinIO format, converts them to CloudEvents, and sends them to a
 `cloudevents` topic in Kafka.
 
+In essence it's a workaround for the fact that MinIO does not allow natively
+sending CloudEvents since it implements the same API surface that AWS S3 also
+provides.
+
+To acheive this, we implement a simple [S3 CloudEvents Adapter](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md).
 
 ## Usage
 

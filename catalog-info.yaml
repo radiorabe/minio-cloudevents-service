@@ -1,12 +1,132 @@
 ---
 apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: minio-cloudevents-api
+  description: |
+    Receives MinIO events from a Kafka topic in S3/MinIO format, converts
+    them to CloudEvents, and sends them to a `cloudevents` topic in Kafka.
+spec:
+  type: asyncapi
+  lifecycle: experimental
+  owner: it-reaktion
+  definition: |
+    asyncapi: '2.6.0'
+    id: 'https://github.com/radiorabe/minio-cloudevents-service'
+    info:
+      title: MinIO CloudEvents Service
+      version: v1alpha1
+      description: |
+        Receives MinIO events from a Kafka topic in S3/MinIO format, converts
+        them to CloudEvents, and sends them to a `cloudevents` topic in Kafka.
+    servers:
+      production:
+        url: kafka.service.int.rabe.ch
+        protocol: kafka
+        description: Production Kafka Ensemble
+        security:
+          - ssl: []
+    channels:
+      minioevents:
+        publish:
+          message:
+            $ref: '#/components/messages/S3Event'
+      cloudevents:
+        subscribe:
+          message:
+            $ref: '#/components/messages/CloudEvent'
+    components:
+      messages:
+        S3Event:
+          description: |
+            S3Event as defined by AWS/MinIO, only the fields we are interested in are documented here.
+          payload:
+            type: object
+            properties:
+              value: 
+                type: object
+                properties:
+                  Records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/S3Record'
+        CloudEvent:
+          description: |
+            Generic CloudEvent containing an S3Event
+          payload:
+              type: object
+              properties:
+                specversion:
+                  type: string
+                  enum: ['1.0']
+                type:
+                  type: string
+                  example: 'com.amazonaws.s3.s3:ObjectCreated:Put'
+                source:
+                  type: string
+                  format: uri
+                  example: 'minio:s3..bucket.name'
+                id:
+                  type: string
+                time:
+                  type: string
+                  format: date-time
+                contenttype:
+                  type: string
+                  example: 'application/json'
+                data:
+                  $ref: '#/components/schemas/S3Record'
+      schemas:
+        S3Record:
+          description: |
+            Inner object of a MinIO event. Each S3Event contains several of these and they map to several CloudEvents.
+          type: object
+          properties:
+            responseElements:
+              type: object
+              properties:
+                x-amz-request-id:
+                  type: string
+                x-amz-id-2:
+                  type: string
+            awsRegion:
+              type: string
+              example: ""
+            eventSource:
+              type: string
+              example: "minio:s3"
+            eventName:
+              type: string
+              example: "s3:ObjectCreated:Put"
+            eventTime:
+              type: string
+              format: date-time
+            s3:
+              type: object
+              properties:
+                bucket:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "bucket.name"
+                object:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+      securitySchemes:
+        ssl:
+          type: X509
+---
+apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: minio-cloudevents-service
   title: MinIo CloudEvents Service
   description: |
-    Consumes MinIO events from a Kafka topic in S3/MinIO format and converts
-    them to CloudEvents and sends them to a `cloudevents` topic in Kafka.
+    Receives MinIO events from a Kafka topic in S3/MinIO format, converts
+    them to CloudEvents, and sends them to a `cloudevents` topic in Kafka.
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: radiorabe/minio-cloudevents-service
@@ -22,3 +142,5 @@ spec:
     - component:default/s2i-python-minimal
     - component:default/minio
     - component:default/kafka
+  providesApis:
+    - minio-cloudevents-api
