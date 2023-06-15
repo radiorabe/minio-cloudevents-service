@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def from_consumer_record(msg: ConsumerRecord) -> [CloudEvent]:
     """
-    naive implementation of https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md
+    Convert msg to an array of CloudEvents using a naive implementation of https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md.
     """
     for rec in json.loads(msg.value).get("Records", []):
         yield CloudEvent(
@@ -58,6 +58,9 @@ def app(
     consumer_auto_offset_reset: str,
     producer_topic: str,
 ):
+    """
+    Set up kafka consumer and producer, block until a SIGINT while processing messages.
+    """
     consumer = KafkaConsumer(
         consumer_topic,
         bootstrap_servers=bootstrap_servers,
@@ -112,6 +115,9 @@ def app(
 
 
 def main():  # pragma: no cover
+    """
+    CLI entrypoint parses args, sets up logging, and calls `app()`.
+    """
     parser = ArgumentParser(__name__)
     parser.add(
         "--kafka-bootstrap-servers",
