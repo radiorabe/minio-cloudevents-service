@@ -206,13 +206,13 @@ files = [
 
 [[package]]
 name = "configargparse"
-version = "1.5.3"
+version = "1.5.5"
 description = "A drop-in replacement for argparse that allows options to also be set via config files and/or environment variables."
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
-    {file = "ConfigArgParse-1.5.3-py3-none-any.whl", hash = "sha256:18f6535a2db9f6e02bd5626cc7455eac3e96b9ab3d969d366f9aafd5c5c00fe7"},
-    {file = "ConfigArgParse-1.5.3.tar.gz", hash = "sha256:1b0b3cbf664ab59dada57123c81eff3d9737e0d11d8cf79e3d6eb10823f1739f"},
+    {file = "ConfigArgParse-1.5.5-py3-none-any.whl", hash = "sha256:541360ddc1b15c517f95c0d02d1fca4591266628f3667acdc5d13dccc78884ca"},
+    {file = "ConfigArgParse-1.5.5.tar.gz", hash = "sha256:363d80a6d35614bd446e2f2b1b216f3b33741d03ac6d0a92803306f40e555b58"},
 ]
 
 [package.extras]
@@ -641,4 +641,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "0b865fb8bc615c8889f6c575c99755c57be8a9b68290a1a988c8f85db677f993"
+content-hash = "2670a3f2dffa8e21506eb77c7983947210648736bf7713040349c06245c36b54"
