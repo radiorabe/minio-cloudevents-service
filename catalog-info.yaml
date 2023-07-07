@@ -3,9 +3,12 @@ apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
   name: minio-cloudevents-api
+  title: MinIO CloudEvents API
   description: |
     Receives MinIO events from a Kafka topic in S3/MinIO format, converts
     them to CloudEvents, and sends them to a `cloudevents` topic in Kafka.
+  annotations:
+    backstage.io/techdocs-ref: dir:.
 spec:
   type: asyncapi
   lifecycle: experimental
