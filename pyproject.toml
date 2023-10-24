@@ -12,7 +12,7 @@ minioevents = 'minioevents:main'
 
 [tool.poetry.dependencies]
 python = "^3.11"
-cloudevents = "^1.9.0"
+cloudevents = "^1.10.0"
 ConfigArgParse = "^1.7"
 kafka-python = "^2.0.2"
 cachecontrol = "^0.13.1"
