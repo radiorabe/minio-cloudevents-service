@@ -46,7 +46,7 @@ spec:
           payload:
             type: object
             properties:
-              value: 
+              value:
                 type: object
                 properties:
                   Records:
