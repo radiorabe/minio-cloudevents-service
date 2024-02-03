@@ -77,7 +77,7 @@ _CONSUMER_RECORD = ConsumerRecord(
                     "eventTime": "eventtime",
                 },
             ),
-        )
+        ),
     ],
 )
 def test_from_consumer_record(minioevent, expected):
@@ -133,7 +133,7 @@ def test_app(mock_consumer, mock_producer):
                         "eventName": "eventname",
                         "eventTime": "eventtime",
                     },
-                }
+                },
             ),
             "utf-8",
         ),
