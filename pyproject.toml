@@ -15,7 +15,6 @@ python = "^3.11"
 cloudevents = "^1.10.1"
 ConfigArgParse = "^1.7"
 kafka-python = "^2.0.2"
-cachecontrol = "^0.13.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.1.1"
@@ -26,6 +25,11 @@ pytest-ruff = "^0.2"
 ruff = "^0.2.0"
 isort = "^5.13.2"
 pytest-isort = "^3.1.0"
+
+[tool.ruff]
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B", "E", "I", "PL", "UP", "RUF100"]
+fixable = ["ALL"]
 
 [tool.isort]
 profile = "black"

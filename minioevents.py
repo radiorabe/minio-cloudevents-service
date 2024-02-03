@@ -13,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def from_consumer_record(msg: ConsumerRecord) -> [CloudEvent]:
-    """
-    Convert msg to an array of CloudEvents using a naive implementation of https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md.
-    """
+    """Convert msg to an array of CloudEvents using a naive implementation of https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md."""
     for rec in json.loads(msg.value).get("Records", []):
         yield CloudEvent(
             {
@@ -23,21 +21,21 @@ def from_consumer_record(msg: ConsumerRecord) -> [CloudEvent]:
                     [
                         rec.get("responseElements", {}).get("x-amz-request-id"),
                         rec.get("responseElements", {}).get("x-amz-id-2"),
-                    ]
+                    ],
                 ),
                 "source": ".".join(
                     [
                         rec.get("eventSource"),
                         rec.get("awsRegion"),
                         rec.get("s3", {}).get("bucket", {}).get("name"),
-                    ]
+                    ],
                 ),
                 "specversion": "1.0",
                 "type": ".".join(
                     [
                         "com.amazonaws.s3",
                         rec.get("eventName"),
-                    ]
+                    ],
                 ),
                 "datacontenttype": "application/json",
                 "subject": rec.get("s3", {}).get("object", {}).get("key"),
@@ -47,7 +45,7 @@ def from_consumer_record(msg: ConsumerRecord) -> [CloudEvent]:
         )
 
 
-def app(
+def app(  # noqa: PLR0913
     bootstrap_servers: list[str],
     security_protocol: str,
     tls_cafile: str,
@@ -58,9 +56,7 @@ def app(
     consumer_auto_offset_reset: str,
     producer_topic: str,
 ):
-    """
-    Set up kafka consumer and producer, block until a SIGINT while processing messages.
-    """
+    """Set up kafka consumer and producer, block until SIGINT while reading messages."""
     consumer = KafkaConsumer(
         consumer_topic,
         bootstrap_servers=bootstrap_servers,
@@ -97,12 +93,12 @@ def app(
         for ce in from_consumer_record(msg):
             km = to_structured(
                 ce,
-                key_mapper=lambda event: ".".join(
+                key_mapper=lambda event, ce=ce: ".".join(
                     [
                         ce.get("type"),
                         ce.get("source"),
                         ce.get("subject"),
-                    ]
+                    ],
                 ),
             )
             producer.send(
@@ -115,9 +111,7 @@ def app(
 
 
 def main():  # pragma: no cover
-    """
-    CLI entrypoint parses args, sets up logging, and calls `app()`.
-    """
+    """CLI entrypoint parses args, sets up logging, and calls `app()`."""
     parser = ArgumentParser(__name__)
     parser.add(
         "--kafka-bootstrap-servers",
