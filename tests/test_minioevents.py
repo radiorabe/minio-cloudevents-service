@@ -2,9 +2,9 @@ import json
 from datetime import datetime
 from unittest.mock import patch
 
+import pytest
 from cloudevents.http import CloudEvent
-from kafka.consumer.fetcher import ConsumerRecord
-from pytest import mark
+from kafka.consumer.fetcher import ConsumerRecord  # type: ignore[import-untyped]
 
 from minioevents import app, from_consumer_record
 
@@ -12,7 +12,7 @@ _CONSUMER_RECORD = ConsumerRecord(
     topic="test",
     partition=0,
     offset=0,
-    timestamp=datetime(1993, 3, 1),
+    timestamp=datetime(1993, 3, 1),  # noqa: DTZ001
     timestamp_type=None,
     key="testkey",
     value="""
@@ -47,8 +47,8 @@ _CONSUMER_RECORD = ConsumerRecord(
 )
 
 
-@mark.parametrize(
-    "minioevent,expected",
+@pytest.mark.parametrize(
+    ("minioevent", "expected"),
     [
         (
             _CONSUMER_RECORD,

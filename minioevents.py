@@ -1,18 +1,25 @@
+"""MinIO Events to CloudEvents Bridge."""
+
+from __future__ import annotations
+
 import json
 import logging
 import signal
 import sys
+from typing import TYPE_CHECKING, Any, Generator, NoReturn
 
 from cloudevents.http import CloudEvent
 from cloudevents.kafka import to_structured
-from configargparse import ArgumentParser
-from kafka import KafkaConsumer, KafkaProducer
-from kafka.consumer.fetcher import ConsumerRecord
+from configargparse import ArgumentParser  # type: ignore[import-untyped]
+from kafka import KafkaConsumer, KafkaProducer  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:  # pragma: no cover
+    from kafka.consumer.fetcher import ConsumerRecord  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
 
-def from_consumer_record(msg: ConsumerRecord) -> [CloudEvent]:
+def from_consumer_record(msg: ConsumerRecord) -> Generator[CloudEvent, None, None]:
     """Convert msg to an array of CloudEvents using a naive implementation of https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md."""
     for rec in json.loads(msg.value).get("Records", []):
         yield CloudEvent(
@@ -55,7 +62,7 @@ def app(  # noqa: PLR0913
     consumer_group: str,
     consumer_auto_offset_reset: str,
     producer_topic: str,
-):
+) -> None:
     """Set up kafka consumer and producer, block until SIGINT while reading messages."""
     consumer = KafkaConsumer(
         consumer_topic,
@@ -78,7 +85,7 @@ def app(  # noqa: PLR0913
         ssl_keyfile=tls_keyfile,
     )
 
-    def on_sigint(*_):  # pragma: no cover
+    def on_sigint(*_: Any) -> NoReturn:  # noqa: ANN401 # pragma: no cover
         consumer.close()
         producer.flush()
         producer.close()
@@ -86,21 +93,21 @@ def app(  # noqa: PLR0913
 
     signal.signal(signal.SIGINT, on_sigint)
 
-    def on_send_error(ex):  # pragma: no cover
+    def on_send_error(ex: Exception) -> None:  # pragma: no cover
         logger.error("Failed to send CloudEvent", exc_info=ex)
+
+    def _key_mapper(ce: CloudEvent) -> Any | None:  # noqa: ANN401
+        return ".".join(
+            [
+                ce.get("type"),  # type: ignore[list-item]
+                ce.get("source"),  # type: ignore[list-item]
+                ce.get("subject"),  # type: ignore[list-item]
+            ],
+        )
 
     for msg in consumer:
         for ce in from_consumer_record(msg):
-            km = to_structured(
-                ce,
-                key_mapper=lambda event, ce=ce: ".".join(
-                    [
-                        ce.get("type"),
-                        ce.get("source"),
-                        ce.get("subject"),
-                    ],
-                ),
-            )
+            km = to_structured(ce, key_mapper=_key_mapper)
             producer.send(
                 producer_topic,
                 key=km.key,
@@ -110,7 +117,7 @@ def app(  # noqa: PLR0913
         producer.flush()
 
 
-def main():  # pragma: no cover
+def main() -> None:  # pragma: no cover
     """CLI entrypoint parses args, sets up logging, and calls `app()`."""
     parser = ArgumentParser(__name__)
     parser.add(
@@ -170,7 +177,7 @@ def main():  # pragma: no cover
 
     if not options.quiet:
         logging.basicConfig(level=logging.INFO)
-    logger.info(f"Starting {__name__}...")
+    logger.info("Starting %s", __name__)
 
     app(
         bootstrap_servers=options.kafka_bootstrap_servers,
