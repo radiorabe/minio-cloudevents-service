@@ -116,7 +116,6 @@ def test_app(mock_consumer, mock_producer):
                     "source": "eventsource..bucketname",
                     "specversion": "1.0",
                     "type": "com.amazonaws.s3.eventname",
-                    "datacontenttype": "application/json",
                     "subject": "objectkey",
                     "time": "eventtime",
                     "data": {
@@ -137,5 +136,5 @@ def test_app(mock_consumer, mock_producer):
             ),
             "utf-8",
         ),
-        headers=None,
+        headers={"content-type": b"application/json"},
     )
