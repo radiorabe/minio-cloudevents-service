@@ -14,7 +14,7 @@ minioevents = 'minioevents:main'
 python = "^3.11"
 cloudevents = "^1.11.0"
 ConfigArgParse = "^1.7"
-kafka-python-ng = "^2.2.2"
+kafka-python-ng = "^2.2.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
