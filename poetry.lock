@@ -227,13 +227,13 @@ files = [
 
 [[package]]
 name = "kafka-python-ng"
-version = "2.2.2"
+version = "2.2.3"
 description = "Pure Python client for Apache Kafka"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "kafka-python-ng-2.2.2.tar.gz", hash = "sha256:87ad3a766e2c0bec71d9b99bdd9e9c5cda62d96cfda61a8ca16510484d6ad7d4"},
-    {file = "kafka_python_ng-2.2.2-py2.py3-none-any.whl", hash = "sha256:3fab1a03133fade1b6fd5367ff726d980e59031c4aaca9bf02c516840a4f8406"},
+    {file = "kafka_python_ng-2.2.3-py2.py3-none-any.whl", hash = "sha256:adc6e82147c441ca4ae1f22e291fc08efab0d10971cbd4aa1481d2ffa38e9480"},
+    {file = "kafka_python_ng-2.2.3.tar.gz", hash = "sha256:f79f28e10ade9b5a9860b2ec15b7cc8dc510d5702f5a399430478cff5f93a05a"},
 ]
 
 [package.extras]
@@ -484,4 +484,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "58bb64b8f072023db445ad3461ff90200537c6530bba0bffc9e203ca399fab66"
+content-hash = "c46baac43ab6e671ec7159ca71b2764f02949b9f891be022fa9132dd6797b964"
