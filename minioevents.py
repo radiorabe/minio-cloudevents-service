@@ -6,7 +6,7 @@ import json
 import logging
 import signal
 import sys
-from typing import TYPE_CHECKING, Any, Generator, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from cloudevents.http import CloudEvent
 from cloudevents.kafka import to_structured
@@ -14,6 +14,8 @@ from configargparse import ArgumentParser  # type: ignore[import-untyped]
 from kafka import KafkaConsumer, KafkaProducer  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Generator
+
     from kafka.consumer.fetcher import ConsumerRecord  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
