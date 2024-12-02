@@ -114,7 +114,7 @@ def app(  # noqa: PLR0913
                 producer_topic,
                 key=km.key,
                 value=km.value,
-                headers=km.headers if km.headers else None,
+                headers=km.headers if km.headers else [],
             ).add_errback(on_send_error)
         producer.flush()
 
