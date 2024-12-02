@@ -136,5 +136,5 @@ def test_app(mock_consumer, mock_producer):
             ),
             "utf-8",
         ),
-        headers={"content-type": b"application/json"},
+        headers=[("content-type", b"application/json")],
     )

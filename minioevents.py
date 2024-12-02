@@ -9,7 +9,7 @@ import sys
 from typing import TYPE_CHECKING, Any, NoReturn
 
 from cloudevents.http import CloudEvent
-from cloudevents.kafka import to_structured
+from cloudevents.kafka import KafkaMessage, to_structured
 from configargparse import ArgumentParser  # type: ignore[import-untyped]
 from kafka import KafkaConsumer, KafkaProducer  # type: ignore[import-untyped]
 
@@ -98,7 +98,7 @@ def app(  # noqa: PLR0913
     def on_send_error(ex: Exception) -> None:  # pragma: no cover
         logger.error("Failed to send CloudEvent", exc_info=ex)
 
-    def _key_mapper(ce: CloudEvent) -> Any | None:  # noqa: ANN401
+    def _key_mapper(ce: CloudEvent) -> str:
         return ".".join(
             [
                 ce.get("type"),  # type: ignore[list-item]
@@ -109,12 +109,15 @@ def app(  # noqa: PLR0913
 
     for msg in consumer:
         for ce in from_consumer_record(msg):
-            km = to_structured(ce, key_mapper=_key_mapper)
+            km: KafkaMessage = to_structured(ce, key_mapper=_key_mapper)
+            headers: list[tuple[str, bytes]] | None
+            if km.headers:
+                headers = list(km.headers.items())
             producer.send(
                 producer_topic,
                 key=km.key,
                 value=km.value,
-                headers=km.headers if km.headers else [],
+                headers=headers,
             ).add_errback(on_send_error)
         producer.flush()
 
