@@ -19,16 +19,16 @@ kafka-python-ng = "^2.2.3"
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
 mypy = "^1.18.2"
-pytest = "^8.4.2"
+pytest = "^9.0.0"
 pytest-cov = "^7.0.0"
 pytest-mypy = "^1.0.1"
 pytest-random-order = "^1.2.0"
 pytest-ruff = "^0.5"
 ruff = "^0.14.4"
 
-[tool.pytest.ini_options]
-minversion = "7.2"
-addopts = "-ra -q --random-order --doctest-glob='*.md' --doctest-modules --cov=minioevents --cov-fail-under=100 --ruff --mypy --ignore=docs/"
+[tool.pytest]
+minversion = "9.0"
+addopts = ["-ra", "-q", "--random-order", "--doctest-glob='*.md'", "--doctest-modules", "--cov=minioevents", "--cov-fail-under=100", "--ruff", "--mypy", "--ignore=docs/"]
 
 [build-system]
 requires = ["poetry-core"]
