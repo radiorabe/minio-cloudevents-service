@@ -19,7 +19,7 @@ kafka-python-ng = "^2.2.3"
 [tool.poetry.group.dev.dependencies]
 black = "^25.11.0"
 mypy = "^1.19.0"
-pytest = "^9.0.1"
+pytest = "^9.0.2"
 pytest-cov = "^7.0.0"
 pytest-mypy = "^1.0.1"
 pytest-random-order = "^1.2.0"
