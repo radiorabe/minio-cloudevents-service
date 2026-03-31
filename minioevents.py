@@ -8,14 +8,16 @@ import signal
 import sys
 from typing import TYPE_CHECKING, Any, NoReturn
 
-from cloudevents.http import CloudEvent
-from cloudevents.kafka import KafkaMessage, to_structured
+from cloudevents.core.bindings.kafka import KafkaMessage, to_structured_event
+from cloudevents.core.v1.event import CloudEvent
 from configargparse import ArgumentParser  # type: ignore[import-untyped]
+from dateutil import parser as dtparser  # type: ignore[import-untyped]
 from kafka import KafkaConsumer, KafkaProducer  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Generator
 
+    from cloudevents.core.base import BaseCloudEvent
     from kafka.consumer.fetcher import ConsumerRecord  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
@@ -24,34 +26,34 @@ logger = logging.getLogger(__name__)
 def from_consumer_record(msg: ConsumerRecord) -> Generator[CloudEvent, None, None]:
     """Convert msg to an array of CloudEvents using a naive implementation of https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md."""
     for rec in json.loads(msg.value).get("Records", []):
-        yield CloudEvent(
-            {
-                "id": ".".join(
-                    [
-                        rec.get("responseElements", {}).get("x-amz-request-id"),
-                        rec.get("responseElements", {}).get("x-amz-id-2"),
-                    ],
-                ),
-                "source": ".".join(
-                    [
-                        rec.get("eventSource"),
-                        rec.get("awsRegion"),
-                        rec.get("s3", {}).get("bucket", {}).get("name"),
-                    ],
-                ),
-                "specversion": "1.0",
-                "type": ".".join(
-                    [
-                        "com.amazonaws.s3",
-                        rec.get("eventName"),
-                    ],
-                ),
-                "datacontenttype": "application/json",
-                "subject": rec.get("s3", {}).get("object", {}).get("key"),
-                "time": rec.get("eventTime"),
-            },
-            rec,
-        )
+        event_time_str = rec.get("eventTime")
+        attributes: dict[str, Any] = {
+            "id": ".".join(
+                [
+                    rec.get("responseElements", {}).get("x-amz-request-id"),
+                    rec.get("responseElements", {}).get("x-amz-id-2"),
+                ],
+            ),
+            "source": ".".join(
+                [
+                    rec.get("eventSource"),
+                    rec.get("awsRegion"),
+                    rec.get("s3", {}).get("bucket", {}).get("name"),
+                ],
+            ),
+            "specversion": "1.0",
+            "type": ".".join(
+                [
+                    "com.amazonaws.s3",
+                    rec.get("eventName"),
+                ],
+            ),
+            "datacontenttype": "application/json",
+            "subject": rec.get("s3", {}).get("object", {}).get("key"),
+        }
+        if event_time_str:
+            attributes["time"] = dtparser.parse(event_time_str)
+        yield CloudEvent(attributes=attributes, data=rec)
 
 
 def app(  # noqa: PLR0913
@@ -98,18 +100,18 @@ def app(  # noqa: PLR0913
     def on_send_error(ex: Exception) -> None:  # pragma: no cover
         logger.error("Failed to send CloudEvent", exc_info=ex)
 
-    def _key_mapper(ce: CloudEvent) -> str:
+    def _key_mapper(ce: BaseCloudEvent) -> str | bytes | None:
         return ".".join(
             [
-                ce.get("type"),  # type: ignore[list-item]
-                ce.get("source"),  # type: ignore[list-item]
-                ce.get("subject"),  # type: ignore[list-item]
+                ce.get_type(),
+                ce.get_source(),
+                ce.get_subject() or "",
             ],
         )
 
     for msg in consumer:
         for ce in from_consumer_record(msg):
-            km: KafkaMessage = to_structured(ce, key_mapper=_key_mapper)
+            km: KafkaMessage = to_structured_event(ce, key_mapper=_key_mapper)
             headers: list[tuple[str, bytes]] | None
             if km.headers:
                 headers = list(km.headers.items())

@@ -3,11 +3,13 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from cloudevents.http import CloudEvent
+from dateutil import parser as dtparser  # type: ignore[import-untyped]
 from kafka.consumer.fetcher import ConsumerRecord  # type: ignore[import-untyped]
 
 from minioevents import app, from_consumer_record
 
+_EVENT_TIME = "2023-01-15T12:34:56.000Z"
+_EVENT_TIME_SERIALIZED = "2023-01-15T12:34:56Z"
 _CONSUMER_RECORD = ConsumerRecord(
     topic="test",
     partition=0,
@@ -34,7 +36,7 @@ _CONSUMER_RECORD = ConsumerRecord(
                             }
                         },
                         "eventName": "eventname",
-                        "eventTime": "eventtime"
+                        "eventTime": "2023-01-15T12:34:56.000Z"
                     }
                 ]
             }
@@ -48,42 +50,41 @@ _CONSUMER_RECORD = ConsumerRecord(
 
 
 @pytest.mark.parametrize(
-    ("minioevent", "expected"),
+    ("minioevent", "expected_attrs", "expected_data"),
     [
         (
             _CONSUMER_RECORD,
-            CloudEvent(
-                {
-                    "id": "x-amz-request-id.x-amz-id-2",
-                    "source": "eventsource..bucketname",
-                    "specversion": "1.0",
-                    "type": "com.amazonaws.s3.eventname",
-                    "datacontenttype": "application/json",
-                    "subject": "objectkey",
-                    "time": "eventtime",
+            {
+                "id": "x-amz-request-id.x-amz-id-2",
+                "source": "eventsource..bucketname",
+                "specversion": "1.0",
+                "type": "com.amazonaws.s3.eventname",
+                "datacontenttype": "application/json",
+                "subject": "objectkey",
+                "time": dtparser.parse(_EVENT_TIME),
+            },
+            {
+                "responseElements": {
+                    "x-amz-request-id": "x-amz-request-id",
+                    "x-amz-id-2": "x-amz-id-2",
                 },
-                {
-                    "responseElements": {
-                        "x-amz-request-id": "x-amz-request-id",
-                        "x-amz-id-2": "x-amz-id-2",
-                    },
-                    "eventSource": "eventsource",
-                    "awsRegion": "",
-                    "s3": {
-                        "bucket": {"name": "bucketname"},
-                        "object": {"key": "objectkey"},
-                    },
-                    "eventName": "eventname",
-                    "eventTime": "eventtime",
+                "eventSource": "eventsource",
+                "awsRegion": "",
+                "s3": {
+                    "bucket": {"name": "bucketname"},
+                    "object": {"key": "objectkey"},
                 },
-            ),
+                "eventName": "eventname",
+                "eventTime": _EVENT_TIME,
+            },
         ),
     ],
 )
-def test_from_consumer_record(minioevent, expected):
+def test_from_consumer_record(minioevent, expected_attrs, expected_data):
     called = False
     for ce in from_consumer_record(minioevent):
-        assert ce == expected
+        assert ce.get_attributes() == expected_attrs
+        assert ce.get_data() == expected_data
         called = True
     assert called
 
@@ -116,8 +117,9 @@ def test_app(mock_consumer, mock_producer):
                     "source": "eventsource..bucketname",
                     "specversion": "1.0",
                     "type": "com.amazonaws.s3.eventname",
+                    "datacontenttype": "application/json",
                     "subject": "objectkey",
-                    "time": "eventtime",
+                    "time": _EVENT_TIME_SERIALIZED,
                     "data": {
                         "responseElements": {
                             "x-amz-request-id": "x-amz-request-id",
@@ -130,11 +132,11 @@ def test_app(mock_consumer, mock_producer):
                             "object": {"key": "objectkey"},
                         },
                         "eventName": "eventname",
-                        "eventTime": "eventtime",
+                        "eventTime": _EVENT_TIME,
                     },
                 },
             ),
             "utf-8",
         ),
-        headers=[("content-type", b"application/json")],
+        headers=[("content-type", b"application/cloudevents+json")],
     )
