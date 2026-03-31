@@ -10,13 +10,14 @@ from typing import TYPE_CHECKING, Any, NoReturn
 
 from cloudevents.core.bindings.kafka import KafkaMessage, to_structured_event
 from cloudevents.core.v1.event import CloudEvent
-from dateutil import parser as dtparser  # type: ignore[import-untyped]
 from configargparse import ArgumentParser  # type: ignore[import-untyped]
+from dateutil import parser as dtparser  # type: ignore[import-untyped]
 from kafka import KafkaConsumer, KafkaProducer  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Generator
 
+    from cloudevents.core.base import BaseCloudEvent
     from kafka.consumer.fetcher import ConsumerRecord  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
@@ -99,12 +100,12 @@ def app(  # noqa: PLR0913
     def on_send_error(ex: Exception) -> None:  # pragma: no cover
         logger.error("Failed to send CloudEvent", exc_info=ex)
 
-    def _key_mapper(ce: CloudEvent) -> str:
+    def _key_mapper(ce: BaseCloudEvent) -> str | bytes | None:
         return ".".join(
             [
                 ce.get_type(),
                 ce.get_source(),
-                ce.get_subject(),
+                ce.get_subject() or "",
             ],
         )
 
