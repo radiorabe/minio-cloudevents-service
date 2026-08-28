@@ -56,7 +56,7 @@ def from_consumer_record(msg: ConsumerRecord) -> Generator[CloudEvent, None, Non
         yield CloudEvent(attributes=attributes, data=rec)
 
 
-def app(  # noqa: PLR0913, PLR0917
+def app(  # noqa: PLR0913
     bootstrap_servers: list[str],
     security_protocol: str,
     tls_cafile: str,
